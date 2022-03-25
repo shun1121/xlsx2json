@@ -8,7 +8,6 @@ export const Options: React.VFC = () => {
     });
   }, []);
 
-  console.log("aaaaaaaa")
   const save = () => {
     chrome.storage.local.set({
       greeting: document.querySelector("input")?.value || "Hello",

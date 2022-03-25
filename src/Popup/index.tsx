@@ -1,11 +1,27 @@
 import React, { useState } from "react";
+import { TextInput, NumberInput } from "@mantine/core";
 const XLSX = require("xlsx");
 
+type Type = {
+  [key: string]: {
+    [key: string]: {
+      [key: string]: {
+        h: string;
+        r: string;
+        t: string;
+        v: string;
+        w: string;
+      };
+    };
+  };
+};
+
 export const Popup: React.VFC = () => {
-  const [workbook, setWorkbook] = useState() as any;
-  const [sheetNumber, setSheetNumber] = useState() as any;
-  const [cellNumber, setCellNumber] = useState() as any;
-  const [data, setData] = useState() as any;
+  const [workbook, setWorkbook] = useState<Type>({});
+  const [targetSheet, setTargetSheet] = useState("");
+  const [targetCell, setTargetCell] = useState("");
+  const [sheetNumber, setSheetNumber] = useState("");
+  const [data, setData] = useState("");
 
   const handleReadFile = async (fileObject: File | null) => {
     if (fileObject) {
@@ -14,49 +30,63 @@ export const Popup: React.VFC = () => {
     }
   };
 
-  const handleChange = (e: any) => {
+  const selectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
-    console.log(e.currentTarget.files[0]);
-    handleReadFile(e.currentTarget.files[0]);
+    const fileObject: File | null = e.currentTarget.files![0];
+    handleReadFile(fileObject);
   };
 
-  const chooseSheet = (e: any) => {
-    const Sheet = "Sheet" + e.target.value;
-    console.log(Sheet);
-    setSheetNumber(Sheet);
-  };
-
-  const chooseCell = (e: any) => {
+  const chooseCell = (e: React.ChangeEvent<HTMLInputElement>) => {
     const cell = e.target.value;
     const selected_cell = cell[0].toUpperCase() + cell.slice(1);
-    setCellNumber(selected_cell);
+    setTargetCell(selected_cell);
   };
-  const cellNum = document.getElementById("cellNum");
-  cellNum?.addEventListener("change", chooseCell);
 
-  const handleSubmit = (e: any) => {
-    const Sheet = workbook.Sheets[sheetNumber];
-    const targetCell = Sheet[cellNumber].v;
-    console.log(`シート1のセル${cellNumber}の値：\n${targetCell}`);
-    setData(targetCell);
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log(workbook);
+    if (workbook.Sheets[targetSheet] !== undefined) {
+      const Sheet = workbook.Sheets[targetSheet];
+      if (Sheet[targetCell] !== undefined) {
+        const target_cell = Sheet[targetCell].v;
+        setData(target_cell);
+      } else {
+        console.log("cannot find the value in the cell");
+      }
+    } else {
+      console.log("cannot find the sheet");
+    }
+  };
+
+  const SelectSheet = () => {
+    return (
+      <NumberInput
+        label="シート番号"
+        value={Number(sheetNumber)}
+        onChange={(val: number) => {
+          setSheetNumber(val.toString());
+          setTargetSheet("Sheet" + val.toString());
+        }}
+      />
+    );
   };
 
   return (
     <div style={{ padding: "20px" }}>
-      <input type="file" onChange={handleChange} />
+      <input type="file" onChange={selectFile} />
       <form onSubmit={handleSubmit}>
-        <label>
-          sheet number:
-          <input type="text" onChange={chooseSheet} />
-        </label>
-        <label>
-          choose cell:
-          <input type="text" onChange={chooseCell} />
-        </label>
-        <input type="submit" value="Submit" />
+        <SelectSheet />
+        <TextInput
+          placeholder="セル番号を入力してください"
+          label="セル番号"
+          value={targetCell}
+          onChange={chooseCell}
+        />
+        <div>
+          <input type="submit" value="Submit" />
+        </div>
       </form>
-      {cellNumber ? <div>{data}</div> : <></>}
+      {data ? <div>{`シート1のセル${targetCell}の値：\n${data}`}</div> : <></>}
     </div>
   );
 };
